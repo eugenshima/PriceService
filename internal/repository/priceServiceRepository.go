@@ -17,11 +17,11 @@ type RedisConsumer struct {
 }
 
 // NewConsumer creates a new Redis Stream Consumer
-func NewConsumer(redisClient *redis.Client) *RedisConsumer {
+func NewRedisConsumer(redisClient *redis.Client) *RedisConsumer {
 	return &RedisConsumer{redisClient: redisClient}
 }
 
-// RedisConsumer reading streams from redis
+// RedisConsumer gets latest price from redis stream
 func (repo *RedisConsumer) RedisConsumer(ctx context.Context) ([]*model.Share, error) {
 	var shares []*model.Share
 
@@ -30,6 +30,7 @@ func (repo *RedisConsumer) RedisConsumer(ctx context.Context) ([]*model.Share, e
 	err := json.Unmarshal([]byte(streams[0].Values["GeneratedPrices"].(string)), &shares)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{"shares": shares}).Errorf("Error unmarshalling: %v", err)
+		return nil, err
 	}
 	return shares, nil
 }

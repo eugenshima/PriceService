@@ -40,7 +40,7 @@ func main() {
 		logrus.WithFields(logrus.Fields{"str": cfg.RedisConnectionString}).Errorf("NewRedis: %v", err)
 	}
 
-	r := repository.NewConsumer(client)
+	r := repository.NewRedisConsumer(client)
 	srv := service.NewPriceServiceService(r)
 	hndl := handlers.NewPriceServiceHandler(srv)
 
