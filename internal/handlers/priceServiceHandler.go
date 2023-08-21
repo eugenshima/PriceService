@@ -10,6 +10,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+//go:generate /home/yauhenishymanski/work/bin/mockery --name=PriceServiceService --case=underscore --output=./mocks
+
 // PriceServiceHandler struct ....
 type PriceServiceHandler struct {
 	srv PriceServiceService
@@ -26,7 +28,7 @@ type PriceServiceService interface {
 	GetLatestPrice(context.Context) ([]*model.Share, error)
 }
 
-// GetLatestPrice function receives request to Get user from database by ID
+// GetLatestPrice function receives request to get current prices
 func (s *PriceServiceHandler) GetLatestPrice(ctx context.Context, _ *proto.LatestPriceRequest) (*proto.LatestPriceResponse, error) {
 	results, err := s.srv.GetLatestPrice(ctx)
 	if err != nil {
