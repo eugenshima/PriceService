@@ -4,6 +4,7 @@ package main
 import (
 	"fmt"
 	"net"
+	"sync"
 
 	"github.com/eugenshima/PriceService/internal/config"
 	"github.com/eugenshima/PriceService/internal/handlers"
@@ -30,6 +31,7 @@ func NewRedis(env string) (*redis.Client, error) {
 
 // main function to run the application
 func main() {
+	var mu sync.RWMutex
 	cfg, err := config.NewConfig()
 	if err != nil {
 		logrus.Errorf("Error extracting env variables: %v", err)
@@ -42,7 +44,7 @@ func main() {
 
 	r := repository.NewRedisConsumer(client)
 	srv := service.NewPriceServiceService(r)
-	hndl := handlers.NewPriceServiceHandler(srv)
+	hndl := handlers.NewPriceServiceHandler(srv, &mu)
 
 	lis, err := net.Listen("tcp", "127.0.0.1:8080")
 	if err != nil {

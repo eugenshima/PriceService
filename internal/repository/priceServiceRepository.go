@@ -4,6 +4,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/eugenshima/PriceService/internal/model"
 
@@ -26,11 +27,14 @@ func (repo *RedisConsumer) RedisConsumer(ctx context.Context) ([]*model.Share, e
 	var shares []*model.Share
 
 	streams := repo.redisClient.XRevRange(ctx, "PriceStreaming", "+", "-").Val()
-
+	if len(streams) == 0 {
+		return nil, nil
+	}
 	err := json.Unmarshal([]byte(streams[0].Values["GeneratedPrices"].(string)), &shares)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{"shares": shares}).Errorf("Error unmarshalling: %v", err)
 		return nil, err
 	}
+	time.Sleep(1 * time.Second)
 	return shares, nil
 }

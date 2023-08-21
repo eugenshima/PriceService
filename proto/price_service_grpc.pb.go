@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PriceServiceClient interface {
-	GetLatestPrice(ctx context.Context, in *LatestPriceRequest, opts ...grpc.CallOption) (*LatestPriceResponse, error)
+	GetLatestPrices(ctx context.Context, in *LatestPriceRequest, opts ...grpc.CallOption) (PriceService_GetLatestPricesClient, error)
 }
 
 type priceServiceClient struct {
@@ -33,20 +33,43 @@ func NewPriceServiceClient(cc grpc.ClientConnInterface) PriceServiceClient {
 	return &priceServiceClient{cc}
 }
 
-func (c *priceServiceClient) GetLatestPrice(ctx context.Context, in *LatestPriceRequest, opts ...grpc.CallOption) (*LatestPriceResponse, error) {
-	out := new(LatestPriceResponse)
-	err := c.cc.Invoke(ctx, "/PriceService/GetLatestPrice", in, out, opts...)
+func (c *priceServiceClient) GetLatestPrices(ctx context.Context, in *LatestPriceRequest, opts ...grpc.CallOption) (PriceService_GetLatestPricesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &PriceService_ServiceDesc.Streams[0], "/PriceService/GetLatestPrices", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &priceServiceGetLatestPricesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type PriceService_GetLatestPricesClient interface {
+	Recv() (*LatestPriceResponse, error)
+	grpc.ClientStream
+}
+
+type priceServiceGetLatestPricesClient struct {
+	grpc.ClientStream
+}
+
+func (x *priceServiceGetLatestPricesClient) Recv() (*LatestPriceResponse, error) {
+	m := new(LatestPriceResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // PriceServiceServer is the server API for PriceService service.
 // All implementations must embed UnimplementedPriceServiceServer
 // for forward compatibility
 type PriceServiceServer interface {
-	GetLatestPrice(context.Context, *LatestPriceRequest) (*LatestPriceResponse, error)
+	GetLatestPrices(*LatestPriceRequest, PriceService_GetLatestPricesServer) error
 	mustEmbedUnimplementedPriceServiceServer()
 }
 
@@ -54,8 +77,8 @@ type PriceServiceServer interface {
 type UnimplementedPriceServiceServer struct {
 }
 
-func (UnimplementedPriceServiceServer) GetLatestPrice(context.Context, *LatestPriceRequest) (*LatestPriceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetLatestPrice not implemented")
+func (UnimplementedPriceServiceServer) GetLatestPrices(*LatestPriceRequest, PriceService_GetLatestPricesServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetLatestPrices not implemented")
 }
 func (UnimplementedPriceServiceServer) mustEmbedUnimplementedPriceServiceServer() {}
 
@@ -70,22 +93,25 @@ func RegisterPriceServiceServer(s grpc.ServiceRegistrar, srv PriceServiceServer)
 	s.RegisterService(&PriceService_ServiceDesc, srv)
 }
 
-func _PriceService_GetLatestPrice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LatestPriceRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+func _PriceService_GetLatestPrices_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(LatestPriceRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(PriceServiceServer).GetLatestPrice(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/PriceService/GetLatestPrice",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PriceServiceServer).GetLatestPrice(ctx, req.(*LatestPriceRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(PriceServiceServer).GetLatestPrices(m, &priceServiceGetLatestPricesServer{stream})
+}
+
+type PriceService_GetLatestPricesServer interface {
+	Send(*LatestPriceResponse) error
+	grpc.ServerStream
+}
+
+type priceServiceGetLatestPricesServer struct {
+	grpc.ServerStream
+}
+
+func (x *priceServiceGetLatestPricesServer) Send(m *LatestPriceResponse) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 // PriceService_ServiceDesc is the grpc.ServiceDesc for PriceService service.
@@ -94,12 +120,13 @@ func _PriceService_GetLatestPrice_Handler(srv interface{}, ctx context.Context, 
 var PriceService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "PriceService",
 	HandlerType: (*PriceServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "GetLatestPrice",
-			Handler:    _PriceService_GetLatestPrice_Handler,
+			StreamName:    "GetLatestPrices",
+			Handler:       _PriceService_GetLatestPrices_Handler,
+			ServerStreams: true,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "price_service.proto",
 }

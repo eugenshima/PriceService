@@ -3,6 +3,8 @@ package handlers
 
 import (
 	"context"
+	"fmt"
+	"sync"
 
 	"github.com/eugenshima/PriceService/internal/model"
 	proto "github.com/eugenshima/PriceService/proto"
@@ -15,33 +17,48 @@ import (
 // PriceServiceHandler struct ....
 type PriceServiceHandler struct {
 	srv PriceServiceService
+	mu  *sync.RWMutex
 	proto.UnimplementedPriceServiceServer
 }
 
 // NewPriceServiceHandler creates a new PriceServiceHandler
-func NewPriceServiceHandler(srv PriceServiceService) *PriceServiceHandler {
-	return &PriceServiceHandler{srv: srv}
+func NewPriceServiceHandler(srv PriceServiceService, mu *sync.RWMutex) *PriceServiceHandler {
+	return &PriceServiceHandler{
+		srv: srv,
+		mu:  mu,
+	}
 }
 
 // PriceServiceService is an interface for accessing PriceService
 type PriceServiceService interface {
 	GetLatestPrice(context.Context) ([]*model.Share, error)
+	AddSubscription(context.Context) (map[string]string, error)
 }
 
 // GetLatestPrice function receives request to get current prices
-func (s *PriceServiceHandler) GetLatestPrice(ctx context.Context, _ *proto.LatestPriceRequest) (*proto.LatestPriceResponse, error) {
-	results, err := s.srv.GetLatestPrice(ctx)
-	if err != nil {
-		logrus.Errorf("GetAll: %v", err)
-		return nil, err
-	}
-	res := []*proto.Shares{}
-	for _, result := range results {
-		share := &proto.Shares{
-			ShareName:  result.ShareName,
-			SharePrice: result.SharePrice.(string),
+func (s *PriceServiceHandler) GetLatestPrices(req *proto.LatestPriceRequest, stream proto.PriceService_GetLatestPricesServer) error {
+	for {
+		select {
+		case <-stream.Context().Done():
+			logrus.Info("Stream is probably ended :D")
+			return stream.Context().Err()
+		default:
+			results, err := s.srv.AddSubscription(stream.Context())
+			if err != nil {
+				logrus.Errorf("GetLatestPrice: %v", err)
+				return fmt.Errorf("GetLatestPrice: %w", err)
+			}
+			res := []*proto.Shares{}
+			for key, value := range results {
+				if key == req.ShareName {
+					share := &proto.Shares{
+						ShareName:  key,
+						SharePrice: value,
+					}
+					res = append(res, share)
+				}
+			}
+			stream.Send(&proto.LatestPriceResponse{Shares: res})
 		}
-		res = append(res, share)
 	}
-	return &proto.LatestPriceResponse{Shares: res}, nil
 }
