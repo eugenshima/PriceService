@@ -43,13 +43,13 @@ func (ps *PriceServiceService) GetLatestPrice(ctx context.Context) (map[string]f
 }
 
 // Subscribe function adds a subscription to ID
-func (ps *PriceServiceService) Subscribe(ctx context.Context, ID uuid.UUID) <-chan *model.Share {
+func (ps *PriceServiceService) Subscribe(ctx context.Context, ID uuid.UUID) <-chan map[string]float64 {
 	ps.pubSub.Mu.Lock()
 	defer ps.pubSub.Mu.Unlock()
 
-	response := make(chan *model.Share, 1)
-	ps.pubSub.Subs[ID] = append(ps.pubSub.Subs[ID], response)
-	return response
+	responseChan := make(chan map[string]float64, 1)
+	ps.pubSub.Subs[ID] = append(ps.pubSub.Subs[ID], responseChan)
+	return responseChan
 }
 
 // CloseSubscription function deletes a subscription from concrete price
@@ -60,8 +60,8 @@ func (ps *PriceServiceService) CloseSubscription(ID uuid.UUID) error {
 	if !ps.pubSub.Closed {
 		ps.pubSub.Closed = true
 		for _, subs := range ps.pubSub.Subs {
-			for _, ch := range subs {
-				close(ch)
+			for _, responseChan := range subs {
+				close(responseChan)
 			}
 		}
 	}
@@ -79,8 +79,13 @@ func (ps *PriceServiceService) Publish(ctx context.Context, ID uuid.UUID) error 
 		logrus.Errorf("RedisConsumer: %v", err)
 		return fmt.Errorf("RedisConsumer: %w", err)
 	}
-	for i, response := range ps.pubSub.Subs[ID] {
-		response <- shares[i]
+	sharesMap := make(map[string]float64)
+	for _, result := range shares {
+		sharesMap[result.ShareName] = result.SharePrice.(float64)
+	}
+
+	for _, responseChan := range ps.pubSub.Subs[ID] {
+		responseChan <- sharesMap
 	}
 
 	return nil

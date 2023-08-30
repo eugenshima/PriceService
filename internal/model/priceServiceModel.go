@@ -15,11 +15,11 @@ type Share struct {
 
 type PubSub struct {
 	Mu   sync.RWMutex
-	Subs map[uuid.UUID][]chan *Share
+	Subs map[uuid.UUID][]chan map[string]float64
 	//Shares map[uuid.UUID][]string   // shares for concrete client(ID)
 	Closed bool
 }
 
 func NewPubSub() *PubSub {
-	return &PubSub{Subs: make(map[uuid.UUID][]chan *Share)}
+	return &PubSub{Subs: make(map[uuid.UUID][]chan map[string]float64)}
 }
