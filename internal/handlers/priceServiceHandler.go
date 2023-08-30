@@ -1,14 +1,13 @@
-// Package handlers handles gRPC requests and returns current prices
+// Package handlers handles gRPC requests and returns stream of current prices
 package handlers
 
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/eugenshima/PriceService/internal/model"
 	proto "github.com/eugenshima/PriceService/proto"
-
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -17,33 +16,69 @@ import (
 // PriceServiceHandler struct ....
 type PriceServiceHandler struct {
 	srv PriceServiceService
-	mu  *sync.RWMutex
 	proto.UnimplementedPriceServiceServer
 }
 
 // NewPriceServiceHandler creates a new PriceServiceHandler
-func NewPriceServiceHandler(srv PriceServiceService, mu *sync.RWMutex) *PriceServiceHandler {
+func NewPriceServiceHandler(srv PriceServiceService) *PriceServiceHandler {
 	return &PriceServiceHandler{
 		srv: srv,
-		mu:  mu,
 	}
 }
 
 // PriceServiceService is an interface for accessing PriceService
 type PriceServiceService interface {
-	GetLatestPrice(context.Context) ([]*model.Share, error)
-	AddSubscription(context.Context) (map[string]string, error)
+	GetLatestPrice(ctx context.Context) (map[string]float64, error)
+	Subscribe(context.Context, uuid.UUID) <-chan *model.Share
+	Publish(context.Context, uuid.UUID) error
+	CloseSubscription(uuid.UUID) error
 }
+
+// // GetLatestPrice function receives request to get current prices
+// func (s *PriceServiceHandler) GetLatestPrices(req *proto.LatestPriceRequest, stream proto.PriceService_GetLatestPricesServer) error {
+// 	for {
+// 		select {
+// 		case <-stream.Context().Done():
+// 			logrus.Info("Stream is probably ended :D")
+// 			return stream.Context().Err()
+// 		default:
+// 			results, err := s.srv.AddSubscription(stream.Context())
+// 			if err != nil {
+// 				logrus.Errorf("GetLatestPrice: %v", err)
+// 				return fmt.Errorf("GetLatestPrice: %w", err)
+// 			}
+// 			res := []*proto.Shares{}
+// 			for key, value := range results {
+// 				if key == req.ShareName {
+// 					share := &proto.Shares{
+// 						ShareName:  key,
+// 						SharePrice: float32(value),
+// 					}
+// 					res = append(res, share)
+// 				}
+// 			}
+// 			stream.Send(&proto.LatestPriceResponse{Shares: res})
+// 		}
+// 	}
+// }
 
 // GetLatestPrice function receives request to get current prices
 func (s *PriceServiceHandler) GetLatestPrices(req *proto.LatestPriceRequest, stream proto.PriceService_GetLatestPricesServer) error {
+	ID := uuid.New()
+	response := s.srv.Subscribe(stream.Context(), ID)
+
 	for {
 		select {
 		case <-stream.Context().Done():
+			err := s.srv.CloseSubscription(ID)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{"ID": ID}).Errorf("CloseSubscription: %v", err)
+				return fmt.Errorf("CloseSubscription: %w", err)
+			}
 			logrus.Info("Stream is probably ended :D")
 			return stream.Context().Err()
-		default:
-			results, err := s.srv.AddSubscription(stream.Context())
+		case <-response:
+			results, err := s.srv.GetLatestPrice(stream.Context())
 			if err != nil {
 				logrus.Errorf("GetLatestPrice: %v", err)
 				return fmt.Errorf("GetLatestPrice: %w", err)
@@ -58,7 +93,13 @@ func (s *PriceServiceHandler) GetLatestPrices(req *proto.LatestPriceRequest, str
 					res = append(res, share)
 				}
 			}
-			stream.Send(&proto.LatestPriceResponse{Shares: res})
+			stream.Send(&proto.LatestPriceResponse{Shares: res, ID: ID.String()})
+		default:
+			err := s.srv.Publish(stream.Context(), ID)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{"ID": ID}).Errorf("Publish: %v", err)
+				return fmt.Errorf("publish: %w", err)
+			}
 		}
 	}
 }

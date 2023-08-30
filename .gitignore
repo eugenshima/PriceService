@@ -1,2 +1,2 @@
 .vscode/launch.json
-internal/handlers/priceServiceHandler.go
+proto/price_service.proto

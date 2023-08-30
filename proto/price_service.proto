@@ -3,15 +3,18 @@ option go_package = "github.com/eugenshima/PriceService";
 
 message Shares {
     string shareName = 1;
-    string sharePrice = 2;
+    double sharePrice = 2;
 }
 
 service PriceService {
-    rpc GetLatestPrice(LatestPriceRequest) returns (LatestPriceResponse);
+    rpc GetLatestPrices(LatestPriceRequest) returns (stream LatestPriceResponse);
 }
 
-message LatestPriceRequest {}
+message LatestPriceRequest {
+    string shareName = 1;
+}
 
 message LatestPriceResponse {
     repeated Shares shares = 1;
+    string ID = 2;
 }

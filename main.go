@@ -1,13 +1,13 @@
-// Package main is an ebtry point to this microservice
+// Package main is an entry point to this microservice
 package main
 
 import (
 	"fmt"
 	"net"
-	"sync"
 
 	"github.com/eugenshima/PriceService/internal/config"
 	"github.com/eugenshima/PriceService/internal/handlers"
+	"github.com/eugenshima/PriceService/internal/model"
 	"github.com/eugenshima/PriceService/internal/repository"
 	"github.com/eugenshima/PriceService/internal/service"
 	proto "github.com/eugenshima/PriceService/proto"
@@ -31,7 +31,6 @@ func NewRedis(env string) (*redis.Client, error) {
 
 // main function to run the application
 func main() {
-	var mu sync.RWMutex
 	cfg, err := config.NewConfig()
 	if err != nil {
 		logrus.Errorf("Error extracting env variables: %v", err)
@@ -42,9 +41,11 @@ func main() {
 		logrus.WithFields(logrus.Fields{"str": cfg.RedisConnectionString}).Errorf("NewRedis: %v", err)
 	}
 
+	pubSub := model.NewPubSub()
+
 	r := repository.NewRedisConsumer(client)
-	srv := service.NewPriceServiceService(r)
-	hndl := handlers.NewPriceServiceHandler(srv, &mu)
+	srv := service.NewPriceServiceService(r, pubSub)
+	hndl := handlers.NewPriceServiceHandler(srv)
 
 	lis, err := net.Listen("tcp", "127.0.0.1:8080")
 	if err != nil {

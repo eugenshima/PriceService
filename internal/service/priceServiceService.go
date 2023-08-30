@@ -3,6 +3,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/eugenshima/PriceService/internal/model"
 	"github.com/google/uuid"
@@ -11,12 +12,16 @@ import (
 
 // PriceServiceService struct ....
 type PriceServiceService struct {
-	rps PriceServiceRepository
+	rps    PriceServiceRepository
+	pubSub *model.PubSub
 }
 
 // NewPriceServiceService creates a new PriceServiceService
-func NewPriceServiceService(rps PriceServiceRepository) *PriceServiceService {
-	return &PriceServiceService{rps: rps}
+func NewPriceServiceService(rps PriceServiceRepository, pubSub *model.PubSub) *PriceServiceService {
+	return &PriceServiceService{
+		rps:    rps,
+		pubSub: pubSub,
+	}
 }
 
 // PriceServiceRepository interface represents a repository methods
@@ -25,24 +30,58 @@ type PriceServiceRepository interface {
 }
 
 // GetLatestPrice return latest price from redis stream
-func (s *PriceServiceService) GetLatestPrice(ctx context.Context) ([]*model.Share, error) {
-	return s.rps.RedisConsumer(ctx)
-}
-
-// AddSubscription function adds a subscription to concrete price
-func (s *PriceServiceService) AddSubscription(ctx context.Context) (map[string]string, error) {
-	shares, err := s.rps.RedisConsumer(ctx)
+func (ps *PriceServiceService) GetLatestPrice(ctx context.Context) (map[string]float64, error) {
+	shares, err := ps.rps.RedisConsumer(ctx)
 	if err != nil {
 		logrus.Errorf("RedisConsumer: %v", err)
 	}
-	sharesMap := make(map[string]string)
+	sharesMap := make(map[string]float64)
 	for _, result := range shares {
-		sharesMap[result.ShareName] = result.SharePrice.(string)
+		sharesMap[result.ShareName] = result.SharePrice.(float64)
 	}
 	return sharesMap, nil
 }
 
-// DeleteSubscription function deletes a subscription from concrete price
-func (s *PriceServiceService) DeleteSubscription(ctx context.Context, ID uuid.UUID) error {
+// Subscribe function adds a subscription to ID
+func (ps *PriceServiceService) Subscribe(ctx context.Context, ID uuid.UUID) <-chan *model.Share {
+	ps.pubSub.Mu.Lock()
+	defer ps.pubSub.Mu.Unlock()
+
+	ch := make(chan *model.Share, 1)
+	ps.pubSub.Subs[ID] = append(ps.pubSub.Subs[ID], ch)
+	return ch
+}
+
+// CloseSubscription function deletes a subscription from concrete price
+func (ps *PriceServiceService) CloseSubscription(ID uuid.UUID) error {
+	ps.pubSub.Mu.Lock()
+	defer ps.pubSub.Mu.Unlock()
+
+	if !ps.pubSub.Closed {
+		ps.pubSub.Closed = true
+		for _, subs := range ps.pubSub.Subs {
+			for _, ch := range subs {
+				close(ch)
+			}
+		}
+	}
+
+	return nil
+}
+
+// Publish function publishes info to channel
+func (ps *PriceServiceService) Publish(ctx context.Context, ID uuid.UUID) error {
+	ps.pubSub.Mu.RLock()
+	defer ps.pubSub.Mu.RUnlock()
+
+	shares, err := ps.rps.RedisConsumer(ctx)
+	if err != nil {
+		logrus.Errorf("RedisConsumer: %v", err)
+		return fmt.Errorf("RedisConsumer: %w", err)
+	}
+	for i, ch := range ps.pubSub.Subs[ID] {
+		ch <- shares[i]
+	}
+
 	return nil
 }
