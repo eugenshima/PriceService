@@ -11,7 +11,7 @@ service PriceService {
 }
 
 message LatestPriceRequest {
-    string shareName = 1;
+    repeated string shareName = 1;
 }
 
 message LatestPriceResponse {

@@ -47,9 +47,9 @@ func (ps *PriceServiceService) Subscribe(ctx context.Context, ID uuid.UUID) <-ch
 	ps.pubSub.Mu.Lock()
 	defer ps.pubSub.Mu.Unlock()
 
-	ch := make(chan *model.Share, 1)
-	ps.pubSub.Subs[ID] = append(ps.pubSub.Subs[ID], ch)
-	return ch
+	response := make(chan *model.Share, 1)
+	ps.pubSub.Subs[ID] = append(ps.pubSub.Subs[ID], response)
+	return response
 }
 
 // CloseSubscription function deletes a subscription from concrete price
@@ -79,8 +79,8 @@ func (ps *PriceServiceService) Publish(ctx context.Context, ID uuid.UUID) error 
 		logrus.Errorf("RedisConsumer: %v", err)
 		return fmt.Errorf("RedisConsumer: %w", err)
 	}
-	for i, ch := range ps.pubSub.Subs[ID] {
-		ch <- shares[i]
+	for i, response := range ps.pubSub.Subs[ID] {
+		response <- shares[i]
 	}
 
 	return nil

@@ -35,6 +35,6 @@ func (repo *RedisConsumer) RedisConsumer(ctx context.Context) ([]*model.Share, e
 		logrus.WithFields(logrus.Fields{"shares": shares}).Errorf("Error unmarshalling: %v", err)
 		return nil, err
 	}
-	time.Sleep(1 * time.Second)
+	time.Sleep(500 * time.Millisecond)
 	return shares, nil
 }

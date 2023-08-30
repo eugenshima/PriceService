@@ -34,34 +34,6 @@ type PriceServiceService interface {
 	CloseSubscription(uuid.UUID) error
 }
 
-// // GetLatestPrice function receives request to get current prices
-// func (s *PriceServiceHandler) GetLatestPrices(req *proto.LatestPriceRequest, stream proto.PriceService_GetLatestPricesServer) error {
-// 	for {
-// 		select {
-// 		case <-stream.Context().Done():
-// 			logrus.Info("Stream is probably ended :D")
-// 			return stream.Context().Err()
-// 		default:
-// 			results, err := s.srv.AddSubscription(stream.Context())
-// 			if err != nil {
-// 				logrus.Errorf("GetLatestPrice: %v", err)
-// 				return fmt.Errorf("GetLatestPrice: %w", err)
-// 			}
-// 			res := []*proto.Shares{}
-// 			for key, value := range results {
-// 				if key == req.ShareName {
-// 					share := &proto.Shares{
-// 						ShareName:  key,
-// 						SharePrice: float32(value),
-// 					}
-// 					res = append(res, share)
-// 				}
-// 			}
-// 			stream.Send(&proto.LatestPriceResponse{Shares: res})
-// 		}
-// 	}
-// }
-
 // GetLatestPrice function receives request to get current prices
 func (s *PriceServiceHandler) GetLatestPrices(req *proto.LatestPriceRequest, stream proto.PriceService_GetLatestPricesServer) error {
 	ID := uuid.New()
@@ -78,22 +50,28 @@ func (s *PriceServiceHandler) GetLatestPrices(req *proto.LatestPriceRequest, str
 			logrus.Info("Stream is probably ended :D")
 			return stream.Context().Err()
 		case <-response:
-			results, err := s.srv.GetLatestPrice(stream.Context())
+			sharesMap, err := s.srv.GetLatestPrice(stream.Context())
 			if err != nil {
 				logrus.Errorf("GetLatestPrice: %v", err)
 				return fmt.Errorf("GetLatestPrice: %w", err)
 			}
 			res := []*proto.Shares{}
-			for key, value := range results {
-				if key == req.ShareName {
-					share := &proto.Shares{
-						ShareName:  key,
-						SharePrice: value,
+			for key, value := range sharesMap {
+				for i := 0; i < len(req.ShareName); i++ {
+					if key == req.ShareName[i] {
+						share := &proto.Shares{
+							ShareName:  key,
+							SharePrice: value,
+						}
+						res = append(res, share)
 					}
-					res = append(res, share)
 				}
+
 			}
-			stream.Send(&proto.LatestPriceResponse{Shares: res, ID: ID.String()})
+			stream.Send(&proto.LatestPriceResponse{
+				Shares: res,
+				ID:     ID.String(),
+			})
 		default:
 			err := s.srv.Publish(stream.Context(), ID)
 			if err != nil {
