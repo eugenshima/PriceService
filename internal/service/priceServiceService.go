@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/eugenshima/PriceService/internal/model"
+
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
@@ -43,7 +44,7 @@ func (ps *PriceServiceService) GetLatestPrice(ctx context.Context) (map[string]f
 }
 
 // Subscribe function adds a subscription to ID
-func (ps *PriceServiceService) Subscribe(ctx context.Context, ID uuid.UUID) <-chan map[string]float64 {
+func (ps *PriceServiceService) Subscribe(ID uuid.UUID) <-chan map[string]float64 {
 	ps.pubSub.Mu.Lock()
 	defer ps.pubSub.Mu.Unlock()
 
@@ -53,7 +54,7 @@ func (ps *PriceServiceService) Subscribe(ctx context.Context, ID uuid.UUID) <-ch
 }
 
 // CloseSubscription function deletes a subscription from concrete price
-func (ps *PriceServiceService) CloseSubscription(ID uuid.UUID) error {
+func (ps *PriceServiceService) CloseSubscription() error {
 	ps.pubSub.Mu.Lock()
 	defer ps.pubSub.Mu.Unlock()
 

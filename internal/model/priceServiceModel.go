@@ -1,4 +1,4 @@
-// Package model of our entity
+// Package model of our entity and subscription
 package model
 
 import (
@@ -13,13 +13,14 @@ type Share struct {
 	SharePrice interface{} `json:"price"`
 }
 
+// PubSub struct represents a model for subscriptions
 type PubSub struct {
-	Mu   sync.RWMutex
-	Subs map[uuid.UUID][]chan map[string]float64
-	//Shares map[uuid.UUID][]string   // shares for concrete client(ID)
+	Mu     sync.RWMutex
+	Subs   map[uuid.UUID][]chan map[string]float64
 	Closed bool
 }
 
+// NewPubSub creates a new PubSub instance
 func NewPubSub() *PubSub {
 	return &PubSub{Subs: make(map[uuid.UUID][]chan map[string]float64)}
 }

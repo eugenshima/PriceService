@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	proto "github.com/eugenshima/PriceService/proto"
+
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
@@ -28,20 +29,20 @@ func NewPriceServiceHandler(srv PriceServiceService) *PriceServiceHandler {
 // PriceServiceService is an interface for accessing PriceService
 type PriceServiceService interface {
 	GetLatestPrice(ctx context.Context) (map[string]float64, error)
-	Subscribe(context.Context, uuid.UUID) <-chan map[string]float64
+	Subscribe(uuid.UUID) <-chan map[string]float64
 	Publish(context.Context, uuid.UUID) error
-	CloseSubscription(uuid.UUID) error
+	CloseSubscription() error
 }
 
-// GetLatestPrice function receives request to get current prices
+// GetLatestPrices function receives request to get current prices
 func (ph *PriceServiceHandler) GetLatestPrices(req *proto.LatestPriceRequest, stream proto.PriceService_GetLatestPricesServer) error {
 	ID := uuid.New()
-	responseChan := ph.srv.Subscribe(stream.Context(), ID)
+	responseChan := ph.srv.Subscribe(ID)
 
 	for {
 		select {
 		case <-stream.Context().Done():
-			err := ph.srv.CloseSubscription(ID)
+			err := ph.srv.CloseSubscription()
 			if err != nil {
 				logrus.WithFields(logrus.Fields{"ID": ID}).Errorf("CloseSubscription: %v", err)
 				return fmt.Errorf("CloseSubscription: %w", err)
@@ -60,12 +61,15 @@ func (ph *PriceServiceHandler) GetLatestPrices(req *proto.LatestPriceRequest, st
 						res = append(res, share)
 					}
 				}
-
 			}
-			stream.Send(&proto.LatestPriceResponse{
+			err := stream.Send(&proto.LatestPriceResponse{
 				Shares: res,
 				ID:     ID.String(),
 			})
+			if err != nil {
+				logrus.Errorf("Send: %v", err)
+				return fmt.Errorf("send: %w", err)
+			}
 		default:
 			err := ph.srv.Publish(stream.Context(), ID)
 			if err != nil {

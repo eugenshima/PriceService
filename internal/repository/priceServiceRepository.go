@@ -17,7 +17,7 @@ type RedisConsumer struct {
 	redisClient *redis.Client
 }
 
-// NewConsumer creates a new Redis Stream Consumer
+// NewRedisConsumer creates a new Redis Stream Consumer
 func NewRedisConsumer(redisClient *redis.Client) *RedisConsumer {
 	return &RedisConsumer{redisClient: redisClient}
 }

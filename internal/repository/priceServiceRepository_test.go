@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/eugenshima/PriceService/internal/model"
+
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
 )
@@ -39,18 +40,18 @@ func TestNilRedisConsumer(t *testing.T) {
 }
 
 func addTestingRow() (string, error) {
-	json, _ := json.Marshal(shares)
+	jsonValue, _ := json.Marshal(shares)
 	id := strconv.FormatInt(time.Now().Unix(), 10)
 	err := redisConn.redisClient.XAdd(context.Background(), &redis.XAddArgs{
 		Stream: "PriceStreaming",
 		ID:     id,
 		Values: map[string]interface{}{
-			"GeneratedPrices": json,
+			"GeneratedPrices": jsonValue,
 		},
 	}).Err()
 	return id, err
 }
 
-func delTestingRow(stream string, id string) error {
+func delTestingRow(stream, id string) error {
 	return redisConn.redisClient.XDel(context.Background(), stream, id).Err()
 }

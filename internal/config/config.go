@@ -8,7 +8,6 @@ import (
 // Config struct contains our configuration variables
 type Config struct {
 	RedisConnectionString string `env:"REDIS_CONNECTION_STRING"`
-	//RedisField            string `default: "GeneratedPrices"`
 }
 
 // NewConfig creates a new Config
