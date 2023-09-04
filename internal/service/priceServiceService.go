@@ -33,19 +33,6 @@ type PriceServiceRepository interface {
 	RedisConsumer(context.Context) ([]*model.Share, error)
 }
 
-// GetLatestPrice return latest price from redis stream
-func (ps *PriceServiceService) GetLatestPrice(ctx context.Context) (map[string]float64, error) {
-	shares, err := ps.rps.RedisConsumer(ctx)
-	if err != nil {
-		logrus.Errorf("RedisConsumer: %v", err)
-	}
-	sharesMap := make(map[string]float64)
-	for _, result := range shares {
-		sharesMap[result.ShareName] = result.SharePrice.(float64)
-	}
-	return sharesMap, nil
-}
-
 // Subscribe function adds a subscription to ID
 func (ps *PriceServiceService) Subscribe(ID uuid.UUID, selectedShares []string) error {
 	ps.pubSub.Mu.Lock()
@@ -64,16 +51,13 @@ func (ps *PriceServiceService) CloseSubscription(ID uuid.UUID) error {
 	ps.pubSub.Mu.Lock()
 	defer ps.pubSub.Mu.Unlock()
 
-	if !ps.pubSub.Closed[ID] {
-		for closedID, closedSub := range ps.pubSub.SubsShares {
-			if closedID == ID {
-				logrus.Info("Subscription closed")
-				delete(ps.pubSub.SubsShares, ID)
-				delete(ps.pubSub.Subs, ID)
-				delete(ps.pubSub.Closed, ID)
-				close(closedSub)
-			}
-
+	for closedID, closedSub := range ps.pubSub.SubsShares {
+		if ID == closedID {
+			logrus.Info("Subscription closed")
+			delete(ps.pubSub.SubsShares, ID)
+			delete(ps.pubSub.Subs, ID)
+			delete(ps.pubSub.Closed, ID)
+			close(closedSub)
 		}
 	}
 
@@ -90,7 +74,7 @@ func (ps *PriceServiceService) PublishToAllSubscribers(ctx context.Context) {
 		if err != nil {
 			logrus.Errorf("RedisConsumer: %v", err)
 		}
-		ps.pubSub.Mu.Lock()
+		ps.pubSub.Mu.RLock()
 		for ID, selectedShares := range ps.pubSub.Subs {
 			shares := make([]*model.Share, 0)
 			for _, share := range allShares {
@@ -115,7 +99,7 @@ func (ps *PriceServiceService) PublishToAllSubscribers(ctx context.Context) {
 				}
 			}
 		}
-		ps.pubSub.Mu.Unlock()
+		ps.pubSub.Mu.RUnlock()
 	}
 }
 

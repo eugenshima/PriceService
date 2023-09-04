@@ -31,11 +31,10 @@ func NewPriceServiceHandler(srv PriceServiceService, vl *vld.Validate) *PriceSer
 
 // PriceServiceService is an interface for accessing PriceService
 type PriceServiceService interface {
-	GetLatestPrice(ctx context.Context) (map[string]float64, error)
 	Subscribe(uuid.UUID, []string) error
-	PublishToAllSubscribers(ctx context.Context)
-	Publish(context.Context, uuid.UUID) ([]*proto.Shares, error)
 	CloseSubscription(uuid.UUID) error
+	Publish(context.Context, uuid.UUID) ([]*proto.Shares, error)
+	PublishToAllSubscribers(ctx context.Context)
 }
 
 // CustomValidation function for custom validation
@@ -79,9 +78,6 @@ func (ph *PriceServiceHandler) GetLatestPrices(req *proto.LatestPriceRequest, st
 					return fmt.Errorf("CloseSubscription: %w", err)
 				}
 			}
-
 		}
-
 	}
-
 }
