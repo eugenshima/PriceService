@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 	os.Exit(exitVal)
 }
 
-func TestSubscribe(t *testing.T) {
+func TestPublishToAllSubscribers(t *testing.T) {
 	mockPriceServiceRepository.On("RedisConsumer", mock.AnythingOfType("*context.emptyCtx")).Return([]*model.Share{}, nil).Once()
 
 	shares, err := mockPriceServiceRepository.RedisConsumer(context.Background())

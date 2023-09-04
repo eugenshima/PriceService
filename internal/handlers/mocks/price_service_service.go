@@ -31,29 +31,6 @@ func (_m *PriceServiceService) CloseSubscription(_a0 uuid.UUID) error {
 	return r0
 }
 
-// GetLatestPrice provides a mock function with given fields: ctx
-func (_m *PriceServiceService) GetLatestPrice(ctx context.Context) (map[string]float64, error) {
-	ret := _m.Called(ctx)
-
-	var r0 map[string]float64
-	if rf, ok := ret.Get(0).(func(context.Context) map[string]float64); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]float64)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // Publish provides a mock function with given fields: _a0, _a1
 func (_m *PriceServiceService) Publish(_a0 context.Context, _a1 uuid.UUID) ([]*PriceService.Shares, error) {
 	ret := _m.Called(_a0, _a1)
