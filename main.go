@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/eugenshima/PriceService/internal/service"
 	proto "github.com/eugenshima/PriceService/proto"
 
+	"github.com/go-playground/validator"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -45,7 +47,8 @@ func main() {
 
 	r := repository.NewRedisConsumer(client)
 	srv := service.NewPriceServiceService(r, pubSub)
-	hndl := handlers.NewPriceServiceHandler(srv)
+	go srv.PublishToAllSubscribers(context.Background())
+	hndl := handlers.NewPriceServiceHandler(srv, validator.New())
 
 	lis, err := net.Listen("tcp", "127.0.0.1:8080")
 	if err != nil {

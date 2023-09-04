@@ -15,12 +15,17 @@ type Share struct {
 
 // PubSub struct represents a model for subscriptions
 type PubSub struct {
-	Mu     sync.RWMutex
-	Subs   map[uuid.UUID][]chan map[string]float64
-	Closed bool
+	Mu         sync.RWMutex
+	Subs       map[uuid.UUID][]string
+	SubsShares map[uuid.UUID]chan []*Share
+	Closed     map[uuid.UUID]bool
 }
 
 // NewPubSub creates a new PubSub instance
 func NewPubSub() *PubSub {
-	return &PubSub{Subs: make(map[uuid.UUID][]chan map[string]float64)}
+	return &PubSub{
+		Subs:       make(map[uuid.UUID][]string),
+		SubsShares: make(map[uuid.UUID]chan []*Share),
+		Closed:     make(map[uuid.UUID]bool),
+	}
 }
