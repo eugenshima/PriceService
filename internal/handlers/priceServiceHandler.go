@@ -39,14 +39,23 @@ type PriceServiceService interface {
 
 // CustomValidation function for custom validation
 func (ph *PriceServiceHandler) CustomValidation(ctx context.Context, i interface{}) error {
+	err := ph.vl.VarCtx(ctx, i, "required")
+	if err != nil {
+		return fmt.Errorf("VarCtx: %w", err)
+	}
 	return nil
 }
 
 // GetLatestPrices function receives request to get current prices
 func (ph *PriceServiceHandler) GetLatestPrices(req *proto.LatestPriceRequest, stream proto.PriceService_GetLatestPricesServer) error {
+	err := ph.CustomValidation(stream.Context(), req.ShareName)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{"req.ShareName": req.ShareName}).Errorf("CustomValidate: %v", err)
+		return fmt.Errorf("validate: %w", err)
+	}
 	ID := uuid.New()
 
-	err := ph.srv.Subscribe(ID, req.ShareName)
+	err = ph.srv.Subscribe(ID, req.ShareName)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{"ID": ID, "req.ShareName": req.ShareName}).Errorf("Subscribe: %v", err)
 		return fmt.Errorf("subscribe: %w", err)
