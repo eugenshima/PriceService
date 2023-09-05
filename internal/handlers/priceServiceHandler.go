@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	proto "github.com/eugenshima/PriceService/proto"
+	proto "github.com/eugenshima/price-service/proto"
 
 	vld "github.com/go-playground/validator"
 	"github.com/google/uuid"

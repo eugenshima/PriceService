@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/eugenshima/PriceService/internal/model"
-	"github.com/eugenshima/PriceService/internal/service/mocks"
+	"github.com/eugenshima/price-service/internal/model"
+	"github.com/eugenshima/price-service/internal/service/mocks"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

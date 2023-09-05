@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/eugenshima/PriceService/internal/model"
+	"github.com/eugenshima/price-service/internal/model"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"

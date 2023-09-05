@@ -5,9 +5,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/eugenshima/PriceService/internal/handlers/mocks"
-	"github.com/eugenshima/PriceService/internal/model"
-	PriceService "github.com/eugenshima/PriceService/proto"
+	"github.com/eugenshima/price-service/internal/handlers/mocks"
+	"github.com/eugenshima/price-service/internal/model"
+	PriceService "github.com/eugenshima/price-service/proto"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

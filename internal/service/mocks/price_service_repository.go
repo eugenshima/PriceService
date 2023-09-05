@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	model "github.com/eugenshima/PriceService/internal/model"
+	model "github.com/eugenshima/price-service/internal/model"
 	mock "github.com/stretchr/testify/mock"
 )
 

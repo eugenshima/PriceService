@@ -1,4 +1,4 @@
-module github.com/eugenshima/PriceService
+module github.com/eugenshima/price-service
 
 go 1.18
 

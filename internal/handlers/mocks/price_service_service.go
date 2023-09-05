@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	PriceService "github.com/eugenshima/PriceService/proto"
+	PriceService "github.com/eugenshima/price-service/proto"
 
 	mock "github.com/stretchr/testify/mock"
 

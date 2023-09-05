@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/eugenshima/PriceService/internal/config"
-	"github.com/eugenshima/PriceService/internal/handlers"
-	"github.com/eugenshima/PriceService/internal/model"
-	"github.com/eugenshima/PriceService/internal/repository"
-	"github.com/eugenshima/PriceService/internal/service"
-	proto "github.com/eugenshima/PriceService/proto"
+	"github.com/eugenshima/price-service/internal/config"
+	"github.com/eugenshima/price-service/internal/handlers"
+	"github.com/eugenshima/price-service/internal/model"
+	"github.com/eugenshima/price-service/internal/repository"
+	"github.com/eugenshima/price-service/internal/service"
+	proto "github.com/eugenshima/price-service/proto"
 
 	"github.com/go-playground/validator"
 	"github.com/redis/go-redis/v9"

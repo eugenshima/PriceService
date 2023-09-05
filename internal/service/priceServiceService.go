@@ -5,8 +5,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/eugenshima/PriceService/internal/model"
-	proto "github.com/eugenshima/PriceService/proto"
+	"github.com/eugenshima/price-service/internal/model"
+	proto "github.com/eugenshima/price-service/proto"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
