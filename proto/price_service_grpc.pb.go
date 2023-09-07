@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PriceServiceClient interface {
-	GetLatestPrices(ctx context.Context, in *LatestPriceRequest, opts ...grpc.CallOption) (PriceService_GetLatestPricesClient, error)
+	Subscribe(ctx context.Context, in *SubscribeRequest, opts ...grpc.CallOption) (PriceService_SubscribeClient, error)
 }
 
 type priceServiceClient struct {
@@ -33,12 +33,12 @@ func NewPriceServiceClient(cc grpc.ClientConnInterface) PriceServiceClient {
 	return &priceServiceClient{cc}
 }
 
-func (c *priceServiceClient) GetLatestPrices(ctx context.Context, in *LatestPriceRequest, opts ...grpc.CallOption) (PriceService_GetLatestPricesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &PriceService_ServiceDesc.Streams[0], "/PriceService/GetLatestPrices", opts...)
+func (c *priceServiceClient) Subscribe(ctx context.Context, in *SubscribeRequest, opts ...grpc.CallOption) (PriceService_SubscribeClient, error) {
+	stream, err := c.cc.NewStream(ctx, &PriceService_ServiceDesc.Streams[0], "/PriceService/Subscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &priceServiceGetLatestPricesClient{stream}
+	x := &priceServiceSubscribeClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -48,17 +48,17 @@ func (c *priceServiceClient) GetLatestPrices(ctx context.Context, in *LatestPric
 	return x, nil
 }
 
-type PriceService_GetLatestPricesClient interface {
-	Recv() (*LatestPriceResponse, error)
+type PriceService_SubscribeClient interface {
+	Recv() (*SubscribeResponse, error)
 	grpc.ClientStream
 }
 
-type priceServiceGetLatestPricesClient struct {
+type priceServiceSubscribeClient struct {
 	grpc.ClientStream
 }
 
-func (x *priceServiceGetLatestPricesClient) Recv() (*LatestPriceResponse, error) {
-	m := new(LatestPriceResponse)
+func (x *priceServiceSubscribeClient) Recv() (*SubscribeResponse, error) {
+	m := new(SubscribeResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (x *priceServiceGetLatestPricesClient) Recv() (*LatestPriceResponse, error)
 // All implementations must embed UnimplementedPriceServiceServer
 // for forward compatibility
 type PriceServiceServer interface {
-	GetLatestPrices(*LatestPriceRequest, PriceService_GetLatestPricesServer) error
+	Subscribe(*SubscribeRequest, PriceService_SubscribeServer) error
 	mustEmbedUnimplementedPriceServiceServer()
 }
 
@@ -77,8 +77,8 @@ type PriceServiceServer interface {
 type UnimplementedPriceServiceServer struct {
 }
 
-func (UnimplementedPriceServiceServer) GetLatestPrices(*LatestPriceRequest, PriceService_GetLatestPricesServer) error {
-	return status.Errorf(codes.Unimplemented, "method GetLatestPrices not implemented")
+func (UnimplementedPriceServiceServer) Subscribe(*SubscribeRequest, PriceService_SubscribeServer) error {
+	return status.Errorf(codes.Unimplemented, "method Subscribe not implemented")
 }
 func (UnimplementedPriceServiceServer) mustEmbedUnimplementedPriceServiceServer() {}
 
@@ -93,24 +93,24 @@ func RegisterPriceServiceServer(s grpc.ServiceRegistrar, srv PriceServiceServer)
 	s.RegisterService(&PriceService_ServiceDesc, srv)
 }
 
-func _PriceService_GetLatestPrices_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(LatestPriceRequest)
+func _PriceService_Subscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SubscribeRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(PriceServiceServer).GetLatestPrices(m, &priceServiceGetLatestPricesServer{stream})
+	return srv.(PriceServiceServer).Subscribe(m, &priceServiceSubscribeServer{stream})
 }
 
-type PriceService_GetLatestPricesServer interface {
-	Send(*LatestPriceResponse) error
+type PriceService_SubscribeServer interface {
+	Send(*SubscribeResponse) error
 	grpc.ServerStream
 }
 
-type priceServiceGetLatestPricesServer struct {
+type priceServiceSubscribeServer struct {
 	grpc.ServerStream
 }
 
-func (x *priceServiceGetLatestPricesServer) Send(m *LatestPriceResponse) error {
+func (x *priceServiceSubscribeServer) Send(m *SubscribeResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -123,8 +123,8 @@ var PriceService_ServiceDesc = grpc.ServiceDesc{
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "GetLatestPrices",
-			Handler:       _PriceService_GetLatestPrices_Handler,
+			StreamName:    "Subscribe",
+			Handler:       _PriceService_Subscribe_Handler,
 			ServerStreams: true,
 		},
 	},
