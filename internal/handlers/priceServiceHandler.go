@@ -53,8 +53,8 @@ func (ph *PriceServiceHandler) GetLatestPrices(req *proto.LatestPriceRequest, st
 		logrus.WithFields(logrus.Fields{"req.ShareName": req.ShareName}).Errorf("CustomValidate: %v", err)
 		return fmt.Errorf("validate: %w", err)
 	}
-	ID := uuid.New()
 
+	ID := uuid.New()
 	err = ph.srv.Subscribe(ID, req.ShareName)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{"ID": ID, "req.ShareName": req.ShareName}).Errorf("Subscribe: %v", err)

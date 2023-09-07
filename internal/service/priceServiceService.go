@@ -64,17 +64,36 @@ func (ps *PriceServiceService) CloseSubscription(ID uuid.UUID) error {
 	return nil
 }
 
+// Publish function ....
+func (ps *PriceServiceService) Publish(ctx context.Context, ID uuid.UUID) ([]*proto.Shares, error) {
+	select {
+	case <-ctx.Done():
+		logrus.Info("context closed")
+		return nil, nil
+	case shares := <-ps.pubSub.SubsShares[ID]:
+		res := []*proto.Shares{}
+		for _, share := range shares {
+			protoShare := &proto.Shares{
+				ShareName:  share.ShareName,
+				SharePrice: share.SharePrice.(float64),
+			}
+			res = append(res, protoShare)
+		}
+		return res, nil
+	}
+}
+
 // PublishToAllSubscribers function ....
 func (ps *PriceServiceService) PublishToAllSubscribers(ctx context.Context) {
 	for {
-		if len(ps.pubSub.Subs) == 0 {
-			continue
-		}
 		allShares, err := ps.rps.RedisConsumer(ctx)
 		if err != nil {
 			logrus.Errorf("RedisConsumer: %v", err)
 		}
-		ps.pubSub.Mu.RLock()
+
+		logrus.Infof("allShares: %v %v %v %v %v", allShares[0], allShares[1], allShares[2], allShares[3], allShares[4])
+
+		ps.pubSub.Mu.Lock()
 		for ID, selectedShares := range ps.pubSub.Subs {
 			shares := make([]*model.Share, 0)
 			for _, share := range allShares {
@@ -99,25 +118,6 @@ func (ps *PriceServiceService) PublishToAllSubscribers(ctx context.Context) {
 				}
 			}
 		}
-		ps.pubSub.Mu.RUnlock()
-	}
-}
-
-// Publish function ....
-func (ps *PriceServiceService) Publish(ctx context.Context, ID uuid.UUID) ([]*proto.Shares, error) {
-	select {
-	case <-ctx.Done():
-		logrus.Info("context closed")
-		return nil, nil
-	case shares := <-ps.pubSub.SubsShares[ID]:
-		res := []*proto.Shares{}
-		for _, share := range shares {
-			protoShare := &proto.Shares{
-				ShareName:  share.ShareName,
-				SharePrice: share.SharePrice.(float64),
-			}
-			res = append(res, protoShare)
-		}
-		return res, nil
+		ps.pubSub.Mu.Unlock()
 	}
 }
