@@ -46,6 +46,7 @@ func (ph *PriceServiceHandler) CustomValidation(ctx context.Context, i interface
 	return nil
 }
 
+// Subscribe function adds subscriber
 func (ph *PriceServiceHandler) Subscribe(req *proto.SubscribeRequest, stream proto.PriceService_SubscribeServer) error {
 	err := ph.CustomValidation(stream.Context(), req.ShareName)
 	if err != nil {
