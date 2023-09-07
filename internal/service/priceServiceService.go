@@ -34,7 +34,7 @@ type PriceServiceRepository interface {
 }
 
 // Subscribe function adds a subscription to ID
-func (ps *PriceServiceService) Subscribe(ID uuid.UUID, selectedShares []string) error {
+func (ps *PriceServiceService) AddSubscriber(ID uuid.UUID, selectedShares []string) error {
 	ps.pubSub.Mu.Lock()
 	defer ps.pubSub.Mu.Unlock()
 	if _, ok := ps.pubSub.Subs[ID]; !ok {
@@ -90,8 +90,6 @@ func (ps *PriceServiceService) PublishToAllSubscribers(ctx context.Context) {
 		if err != nil {
 			logrus.Errorf("RedisConsumer: %v", err)
 		}
-
-		logrus.Infof("allShares: %v %v %v %v %v", allShares[0], allShares[1], allShares[2], allShares[3], allShares[4])
 
 		ps.pubSub.Mu.Lock()
 		for ID, selectedShares := range ps.pubSub.Subs {

@@ -7,14 +7,14 @@ message Shares {
 }
 
 service PriceService {
-    rpc GetLatestPrices(LatestPriceRequest) returns (stream LatestPriceResponse);
+    rpc Subscribe(SubscribeRequest) returns (stream SubscribeResponse);
 }
 
-message LatestPriceRequest {
+message SubscribeRequest {
     repeated string shareName = 1;
 }
 
-message LatestPriceResponse {
+message SubscribeResponse {
     repeated Shares shares = 1;
     string ID = 2;
 }
