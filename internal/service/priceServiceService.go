@@ -91,6 +91,8 @@ func (ps *PriceServiceService) PublishToAllSubscribers(ctx context.Context) {
 			logrus.Errorf("RedisConsumer: %v", err)
 		}
 
+		logrus.Infof("shares: %v %v %v %v %v", allShares[0], allShares[1], allShares[2], allShares[3], allShares[4])
+
 		ps.pubSub.Mu.Lock()
 		for ID, selectedShares := range ps.pubSub.Subs {
 			shares := make([]*model.Share, 0)

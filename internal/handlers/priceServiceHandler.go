@@ -71,50 +71,6 @@ func (ph *PriceServiceHandler) Subscribe(req *proto.SubscribeRequest, stream pro
 					logrus.Errorf("CloseSubscription: %v", err)
 					return fmt.Errorf("CloseSubscription: %w", err)
 				}
-				return err
-			}
-			err = stream.Send(&proto.SubscribeResponse{
-				Shares: protoShares,
-				ID:     ID.String(),
-			})
-			if err != nil {
-				deletionErr := ph.srv.CloseSubscription(ID)
-				if deletionErr != nil {
-					logrus.Errorf("CloseSubscription: %v", err)
-					return fmt.Errorf("CloseSubscription: %w", err)
-				}
-			}
-		}
-	}
-}
-
-// GetLatestPrices function receives request to get current prices
-func (ph *PriceServiceHandler) SubscribeOld(req *proto.SubscribeRequest, stream proto.PriceService_SubscribeServer) error {
-	err := ph.CustomValidation(stream.Context(), req.ShareName)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{"req.ShareName": req.ShareName}).Errorf("CustomValidate: %v", err)
-		return fmt.Errorf("validate: %w", err)
-	}
-	fmt.Println("gg")
-	ID := uuid.New()
-	err = ph.srv.AddSubscriber(ID, req.ShareName)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{"ID": ID, "req.ShareName": req.ShareName}).Errorf("Subscribe: %v", err)
-		return fmt.Errorf("subscribe: %w", err)
-	}
-
-	for {
-		select {
-		case <-stream.Context().Done():
-			return nil
-		default:
-			protoShares, err := ph.srv.Publish(stream.Context(), ID)
-			if err != nil {
-				deletionErr := ph.srv.CloseSubscription(ID)
-				if deletionErr != nil {
-					logrus.Errorf("CloseSubscription: %v", err)
-					return fmt.Errorf("CloseSubscription: %w", err)
-				}
 				logrus.WithFields(logrus.Fields{"ID": ID}).Errorf("Publish: %v", err)
 				return fmt.Errorf("publish: %w", err)
 			}
