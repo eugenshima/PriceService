@@ -4,7 +4,6 @@ package repository
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/eugenshima/price-service/internal/model"
@@ -27,7 +26,7 @@ func NewRedisConsumer(redisClient *redis.Client) *RedisConsumer {
 func (repo *RedisConsumer) RedisConsumer(ctx context.Context) ([]*model.Share, error) {
 	var shares []*model.Share
 
-	streams := repo.redisClient.XRange(ctx, "PriceStreaming", "-", "+").Val()
+	streams := repo.redisClient.XRevRange(ctx, "PriceStreaming", "+", "-").Val()
 	if len(streams) == 0 {
 		return nil, nil
 	}
@@ -35,10 +34,6 @@ func (repo *RedisConsumer) RedisConsumer(ctx context.Context) ([]*model.Share, e
 	if err != nil {
 		logrus.WithFields(logrus.Fields{"shares": shares}).Errorf("Error unmarshalling: %v", err)
 		return nil, err
-	}
-	_, err = repo.redisClient.XDel(context.Background(), "PriceStreaming", streams[0].ID).Result()
-	if err != nil {
-		return nil, fmt.Errorf("error deleting message from Redis Stream: %w", err)
 	}
 
 	time.Sleep(1 * time.Second)

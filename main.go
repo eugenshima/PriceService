@@ -47,8 +47,9 @@ func main() {
 
 	r := repository.NewRedisConsumer(client)
 	srv := service.NewPriceServiceService(r, pubSub)
-	go srv.PublishToAllSubscribers(context.Background())
 	hndl := handlers.NewPriceServiceHandler(srv, validator.New())
+
+	go srv.PublishToAllSubscribers(context.Background())
 
 	lis, err := net.Listen("tcp", "127.0.0.1:8080")
 	if err != nil {
